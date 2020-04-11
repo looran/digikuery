@@ -1,4 +1,9 @@
-digikuery is a script to perform queries in [digikam](https://www.digikam.org/) photo manager database, to fetch photo tags for example.
+digikuery is a script to perform queries in [digikam](https://www.digikam.org/) photo manager database.
+
+It can
+* Query albums and pictures containing given tag regex
+* List digikam database structure
+* Provide an interactive python shell for manual queries
 
 ## Usage
 
@@ -39,5 +44,10 @@ $ digikuery -t semaphore
 
 ## Install
 
+``` bash
 $ sudo make install
+```
 
+## Internals
+
+digikuery uses sqlalchemy to map digikam database to python objects.
