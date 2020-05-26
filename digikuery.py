@@ -67,13 +67,12 @@ class Digikuery(object):
         self.session = Session()
         self.metadata = MetaData()
         self.metadata.reflect(self.engine)
-        self.tags = self._tagstree_to_list()
 
     def query_tag(self, expr=None, sort_count=False):
         s = ""
         # go over precomputed tags list and match regex
         tags = dict()
-        for tag, tagname in self.tags:
+        for tag, tagname in self._tagstree_to_list():
                 if expr and not re.match(r".*%s.*" % expr, tagname, re.IGNORECASE):
                     continue
                 images = defaultdict(list)
