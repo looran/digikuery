@@ -68,7 +68,7 @@ class Digikuery(object):
         self.metadata.reflect(self.engine)
         self.tags = self._tagstree_to_list()
 
-    def query_tag(self, expr=None):
+    def query_tag(self, expr=None, sort_count=False):
         s = ""
         # go over precomputed tags list and match regex
         tags = dict()
@@ -89,14 +89,15 @@ class Digikuery(object):
                     images[album].append(i)
                 # sort albums by images count
                 albums = sorted(images.items(), key=lambda k_v: k_v[0])
-                albums = sorted(albums, key=lambda k_v: len(k_v[1]), reverse=True)
+                if sort_count:
+                    albums = sorted(albums, key=lambda k_v: len(k_v[1]), reverse=True)
                 if len(albums) > 0:
                     tags[tagname] = { 'tag': tag, 'albums': albums }
         # display tags sorted by albums count
         for tagname, tag in sorted(tags.items(), key=lambda k_v: len(k_v[1]['albums']), reverse=True):
             s += "{:3} {}\n".format(len(tag['albums']), tagname)
             for album in tag['albums']:
-                s += "    {:3} {}\n".format(len(album[1]), album[0])
+                s += "    {:3} {}\n".format(len(album[1]) if sort_count else "", album[0])
                 if self.verbose:
                     for i in album[1]:
                         s += "        {}\n".format(i.name)
@@ -134,6 +135,7 @@ Tags   : {tags_count}""".format(albums_count=albums_count, images_count=images_c
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Digikam database query tool')
+    parser.add_argument('-c', '--count', action='store_true', help='sort by result count')
     parser.add_argument('-d', '--dbpath', help='database path', default="sqlite:///{home}/Pictures/digikam4.db".format(home=str(pathlib.Path.home())))
     parser.add_argument('-i', '--interactive', action='store_true', help='interactive shell mode')
     parser.add_argument('-r', '--root', help='restrict query to this root album')
@@ -160,6 +162,6 @@ running ipython...""")
     elif args.schema:
         print(dk.schema())
     elif args.tag:
-        print(dk.query_tag(args.tag))
+        print(dk.query_tag(args.tag, args.count))
     else:
         print(dk.stats())
