@@ -58,6 +58,7 @@ class Tag(Base):
 
 class Digikuery(object):
     def __init__(self, dbpath, rootalbum, verbose):
+        self.dbpath = dbpath
         self.rootalbum = rootalbum
         self.verbose = verbose
         self.engine = sqlalchemy.create_engine(dbpath, echo=False)
@@ -111,12 +112,18 @@ class Digikuery(object):
         return s
 
     def stats(self):
+        if self.dbpath.startswith("sqlite://"):
+            dbsize = "%.2fMB" % (pathlib.Path(self.dbpath[10:]).stat().st_size / 1000000)
+        else:
+            dbsize = "N/A"
         albums_count = self.session.query(Album).count()
         images_count = self.session.query(Image).count()
         tags_count = self.session.query(Tag).count()
-        return """Albums : {albums_count}
-Images : {images_count}
-Tags   : {tags_count}""".format(albums_count=albums_count, images_count=images_count, tags_count=tags_count)
+        return """database {dbpath}
+    size {dbsize}
+  albums {albums_count}
+  images {images_count}
+    tags {tags_count}""".format(dbpath=self.dbpath, dbsize=dbsize, albums_count=albums_count, images_count=images_count, tags_count=tags_count)
 
     def _tagstree_to_list(self):
         """ query digikam tags tree and constuct all tags full name """
