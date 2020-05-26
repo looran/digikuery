@@ -73,6 +73,8 @@ class Digikuery(object):
     def query_tag(self, expr=None, sort_count=False):
         s = ""
         # go over precomputed tags list and match regex
+        # we use precomputed tags from self._tagstree_to_list so we can match 'expr' against
+        # aggregated tag name from the tree instead of single tag name
         tags = dict()
         for tag, tagname in self._tagstree_to_list():
                 if expr and not re.match(r".*%s.*" % expr, tagname, re.IGNORECASE):
