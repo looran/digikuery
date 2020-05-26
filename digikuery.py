@@ -104,7 +104,7 @@ class Digikuery(object):
                 s += "    {:3} {}\n".format(len(album[1]) if sort_count else "", album[0])
                 if self.verbose:
                     for i in album[1]:
-                        s += "        {}\n".format(i.name)
+                        s += "            {}\n".format(i.name)
         return s
 
     def schema(self):
