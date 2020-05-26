@@ -88,7 +88,8 @@ class Digikuery(object):
                         album = "no-album"
                     images[album].append(i)
                 # sort albums by images count
-                albums = sorted(images.items(), key=lambda k_v: len(k_v[1]), reverse=True)
+                albums = sorted(images.items(), key=lambda k_v: k_v[0])
+                albums = sorted(albums, key=lambda k_v: len(k_v[1]), reverse=True)
                 if len(albums) > 0:
                     tags[tagname] = { 'tag': tag, 'albums': albums }
         # display tags sorted by albums count
