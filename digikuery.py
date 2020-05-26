@@ -59,10 +59,9 @@ class Tag(Base):
     childs = relationship("Tag", foreign_keys='Tag.pid')
 
 class Digikuery(object):
-    def __init__(self, dbpath, rootalbum, verbose):
+    def __init__(self, dbpath, conf):
         self.dbpath = dbpath
-        self.rootalbum = rootalbum
-        self.verbose = verbose
+        self.conf = conf
         self.engine = sqlalchemy.create_engine(dbpath, echo=False)
         Session = sqlalchemy.orm.sessionmaker()
         Session.configure(bind=self.engine)
@@ -79,7 +78,7 @@ class Digikuery(object):
             s += "    {}\n".format(' '.join([ "{} ({})".format(t, c) for t, c in sorted(tags.items(), key=lambda i: i[1], reverse=True) ]))
         return s
 
-    def query_tag(self, expr=None, sort_count=False):
+    def query_tag(self, expr=None):
         s = ""
         # go over precomputed tags list and match regex
         # we use precomputed tags from self._tagstree_to_list so we can match 'expr' against
@@ -91,8 +90,8 @@ class Digikuery(object):
                 images = defaultdict(list)
                 for i in tag.images:
                     if i.album:
-                        if self.rootalbum:
-                            if i.album.albumRoot.label != self.rootalbum:
+                        if self.conf['root']:
+                            if i.album.albumRoot.label != self.conf['root']:
                                 continue
                             album = i.album.relativePath[1:]
                         else:
@@ -102,7 +101,7 @@ class Digikuery(object):
                     images[album].append(i)
                 # sort albums by images count
                 albums = sorted(images.items(), key=lambda k_v: k_v[0])
-                if sort_count:
+                if self.conf['sort_count']:
                     albums = sorted(albums, key=lambda k_v: len(k_v[1]), reverse=True)
                 if len(albums) > 0:
                     tags[tagname] = { 'tag': tag, 'albums': albums }
@@ -110,8 +109,8 @@ class Digikuery(object):
         for tagname, tag in sorted(tags.items(), key=lambda k_v: len(k_v[1]['albums']), reverse=True):
             s += "{:3} {}\n".format(len(tag['albums']), tagname)
             for album in tag['albums']:
-                s += "    {:3} {}\n".format(len(album[1]) if sort_count else "", album[0])
-                if self.verbose:
+                s += "    {:3} {}\n".format(len(album[1]) if self.conf['sort_count'] else "", album[0])
+                if self.conf['show_image']:
                     for i in album[1]:
                         s += "            {}\n".format(i.name)
         return s
@@ -178,15 +177,20 @@ class Digikuery(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Digikam database query tool')
     parser.add_argument('-a', '--album', nargs='?', const=".*", help='query album tags')
-    parser.add_argument('-c', '--count', action='store_true', help='sort by result count')
     parser.add_argument('-d', '--dbpath', help='database path', default="sqlite:///{home}/Pictures/digikam4.db".format(home=str(pathlib.Path.home())))
     parser.add_argument('-i', '--interactive', action='store_true', help='interactive shell mode')
-    parser.add_argument('-r', '--root', help='restrict query to this root album')
     parser.add_argument('-s', '--schema', action='store_true', help='dump schema')
     parser.add_argument('-t', '--tag', nargs='?', const='.*', help='query tags')
-    parser.add_argument('-v', '--verbose', action='store_true', help='show more details')
+    parser.add_argument('-C', '--sort-count', action='store_true', help='sort by result count')
+    parser.add_argument('-I', '--show-image', action='store_true', help='show image details')
+    parser.add_argument('-R', '--root', help='restrict query to this root album')
     args = parser.parse_args()
-    dk = Digikuery(args.dbpath, args.root, args.verbose)
+    conf = {
+        'show_image': args.show_image,
+        'sort_count': args.sort_count,
+        'root': args.root,
+    }
+    dk = Digikuery(args.dbpath, conf)
     if args.interactive:
         print("""Interactive mode
 available objects:
@@ -207,6 +211,6 @@ running ipython...""")
     elif args.album:
         print(dk.query_album(args.album))
     elif args.tag:
-        print(dk.query_tag(args.tag, args.count))
+        print(dk.query_tag(args.tag))
     else:
         print(dk.stats())
