@@ -48,6 +48,8 @@ class AlbumRoot(Base):
     albums = relationship("Album", back_populates="albumRoot")
 
 class Tag(Base):
+    DIGIKAM_INTERNAL_TAGS_ROOT = ['_Digikam_Internal_Tags_']
+    DIGIKAM_BLACKLIST_TAGS = [ "Color Label None", "Pick Label None", "Current Version" ]
     __tablename__ = "Tags"
     id = Column(Integer, ForeignKey('Tags.pid'), primary_key=True)
     pid = Column(Integer, ForeignKey('Tags.id'))
@@ -127,7 +129,7 @@ class Digikuery(object):
     def _tagstree_to_list(self):
         """ query digikam tags tree and constuct all tags full name """
         def _getchilds(tag, name=""):
-            if tag.name == '_Digikam_Internal_Tags_':
+            if tag.name in Tag.DIGIKAM_INTERNAL_TAGS_ROOT:
                 return list()
             name = (name + '/' if tag.pid != 0 else "") + tag.name
             res = [ (tag, name) ]
