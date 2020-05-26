@@ -164,8 +164,8 @@ available functions:
    dk.stats()
 
 running ipython...""")
-        import ipdb
-        ipdb.set_trace()
+        from IPython import embed
+        embed()
     elif args.schema:
         print(dk.schema())
     elif args.tag:
