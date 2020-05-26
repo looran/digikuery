@@ -70,6 +70,15 @@ class Digikuery(object):
         self.metadata = MetaData()
         self.metadata.reflect(self.engine)
 
+    def query_album(self, name):
+        s = ""
+        if name == '.*':
+            name = None
+        for album, tags in sorted(self._query_albums(name).items()):
+            s += "{} ({})\n".format(album, len(tags))
+            s += "    {}\n".format(' '.join([ "{} ({})".format(t, c) for t, c in sorted(tags.items(), key=lambda i: i[1], reverse=True) ]))
+        return s
+
     def query_tag(self, expr=None, sort_count=False):
         s = ""
         # go over precomputed tags list and match regex
@@ -128,6 +137,21 @@ class Digikuery(object):
   images {images_count}
     tags {tags_count}""".format(dbpath=self.dbpath, dbsize=dbsize, albums_count=albums_count, images_count=images_count, tags_count=tags_count)
 
+    def _query_albums(self, names=None):
+        """ names: None for all albums, string for 'like' match, list for exact album names
+            returns { 'albumname': { 'tagname': tagcount } } """
+        albums = defaultdict(dict)
+        query = self.session.query(Album, Tag, sqlalchemy.func.count(Tag.name)).join(imagetag).join(Image).join(Album)
+        if type(names) is list:
+            query = query.filter(Album.relativePath.in_(names))
+        elif type(names) is str:
+            query = query.filter(Album.relativePath.like('%'+names+'%'))
+        for res in query.group_by(Album).group_by(Tag):
+            if res[1].name in Tag.DIGIKAM_BLACKLIST_TAGS:
+                continue
+            albums[res[0].relativePath][res[1].name] = res[2]
+        return albums
+
     def _tagstree_to_list(self):
         """ query digikam tags tree and constuct all tags full name """
         def _getchilds(tag, name=""):
@@ -143,8 +167,17 @@ class Digikuery(object):
             l.extend(_getchilds(roottag))
         return l
 
+    def _tag_fullname(self, tag):
+        """ returns string of tag full name
+            @tag: child tag object """
+        if len(tag.parent):
+            return self._tag_fullname(tag.parent[0]) + '/' + tag.name
+        else:
+            return tag.name
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Digikam database query tool')
+    parser.add_argument('-a', '--album', nargs='?', const=".*", help='query album tags')
     parser.add_argument('-c', '--count', action='store_true', help='sort by result count')
     parser.add_argument('-d', '--dbpath', help='database path', default="sqlite:///{home}/Pictures/digikam4.db".format(home=str(pathlib.Path.home())))
     parser.add_argument('-i', '--interactive', action='store_true', help='interactive shell mode')
@@ -171,6 +204,8 @@ running ipython...""")
         embed()
     elif args.schema:
         print(dk.schema())
+    elif args.album:
+        print(dk.query_album(args.album))
     elif args.tag:
         print(dk.query_tag(args.tag, args.count))
     else:
