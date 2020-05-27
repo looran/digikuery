@@ -49,7 +49,7 @@ class AlbumRoot(Base):
 
 class Tag(Base):
     DIGIKAM_INTERNAL_TAGS_ROOT = ['_Digikam_Internal_Tags_']
-    DIGIKAM_BLACKLIST_TAGS = [ "Color Label None", "Pick Label None", "Current Version" ]
+    DIGIKAM_BLACKLIST_TAGS = [ "Color Label None", "Pick Label None", "Current Version", "Original Version", "Intermediate Version" ]
     __tablename__ = "Tags"
     id = Column(Integer, ForeignKey('Tags.pid'), primary_key=True)
     pid = Column(Integer, ForeignKey('Tags.id'))
@@ -87,29 +87,36 @@ class Digikuery(object):
         for tag, tagname in self._tagstree_to_list():
                 if expr and not re.match(r".*%s.*" % expr, tagname, re.IGNORECASE):
                     continue
-                images = defaultdict(list)
+                results = defaultdict(list)
                 for i in tag.images:
                     if i.album:
                         if self.conf['root']:
                             if i.album.albumRoot.label != self.conf['root']:
                                 continue
-                            album = i.album.relativePath[1:]
-                        else:
-                            album = "%s%s" % (i.album.albumRoot.label, i.album.relativePath)
-                    else:
-                        album = "no-album"
-                    images[album].append(i)
-                # sort albums by images count
-                albums = sorted(images.items(), key=lambda k_v: k_v[0])
+                        results[(i.album.albumRoot.label, i.album.relativePath)].append(i)
+                # sort albums by name
+                albums = sorted(results.items(), key=lambda k_v: k_v[0])
                 if self.conf['sort_count']:
+                    # sort albums by images count
                     albums = sorted(albums, key=lambda k_v: len(k_v[1]), reverse=True)
                 if len(albums) > 0:
                     tags[tagname] = { 'tag': tag, 'albums': albums }
         # display tags sorted by albums count
         for tagname, tag in sorted(tags.items(), key=lambda k_v: len(k_v[1]['albums']), reverse=True):
             s += "{:3} {}\n".format(len(tag['albums']), tagname)
+            if self.conf['album_tags'] is not None:
+                album_tags = self._query_albums([ album[0][1] for album in tag['albums'] ], skiptag=tagname)
             for album in tag['albums']:
-                s += "    {:3} {}\n".format(len(album[1]) if self.conf['sort_count'] else "", album[0])
+                if self.conf['root']:
+                    albumname = album[0][1][1:] # remove heading '/'
+                else:
+                    albumname = "%s %s" % (album[0][0], album[0][1][1:])
+                s += "    {:3} {}\n".format(len(album[1]) if self.conf['sort_count'] else "", albumname)
+                if self.conf['album_tags'] is not None and len(album_tags[album[0][1]]) > 0:
+                    if self.conf['full_tagname']:
+                        s += "%s\n" % '\n'.join([ "         {:3} {}".format(c, t) for t, c in sorted(album_tags[album[0][1]].items(), key=lambda i: i[1], reverse=True) ])
+                    else:
+                        s += "            {}\n".format(' '.join([ "{} ({})".format(t, c) for t, c in sorted(album_tags[album[0][1]].items(), key=lambda i: i[1], reverse=True) ]))
                 if self.conf['show_image']:
                     for i in album[1]:
                         s += "            {}\n".format(i.name)
@@ -136,11 +143,15 @@ class Digikuery(object):
   images {images_count}
     tags {tags_count}""".format(dbpath=self.dbpath, dbsize=dbsize, albums_count=albums_count, images_count=images_count, tags_count=tags_count)
 
-    def _query_albums(self, names=None):
+    def _query_albums(self, names=None, skiptag=None):
         """ names: None for all albums, string for 'like' match, list for exact album names
+            skiptag: tag name to skip
             returns { 'albumname': { 'tagname': tagcount } } """
         albums = defaultdict(dict)
         query = self.session.query(Album, Tag, sqlalchemy.func.count(Tag.name)).join(imagetag).join(Image).join(Album)
+        if self.conf['root']:
+            query = query.join(AlbumRoot)
+            query = query.filter(AlbumRoot.label == self.conf["root"])
         if type(names) is list:
             query = query.filter(Album.relativePath.in_(names))
         elif type(names) is str:
@@ -148,7 +159,15 @@ class Digikuery(object):
         for res in query.group_by(Album).group_by(Tag):
             if res[1].name in Tag.DIGIKAM_BLACKLIST_TAGS:
                 continue
-            albums[res[0].relativePath][res[1].name] = res[2]
+            tag_fullname = self._tag_fullname(res[1])
+            if skiptag and (skiptag == res[1].name or skiptag == tag_fullname):
+                continue
+            if self.conf['album_tags'] != '.*' and not re.match(r".*%s.*" % self.conf['album_tags'], tag_fullname, re.IGNORECASE):
+                continue
+            if self.conf['full_tagname']:
+                albums[res[0].relativePath][tag_fullname] = res[2]
+            else:
+                albums[res[0].relativePath][res[1].name] = res[2]
         return albums
 
     def _tagstree_to_list(self):
@@ -182,13 +201,17 @@ if __name__ == "__main__":
     parser.add_argument('-s', '--schema', action='store_true', help='dump schema')
     parser.add_argument('-t', '--tag', nargs='?', const='.*', help='query tags')
     parser.add_argument('-C', '--sort-count', action='store_true', help='sort by result count')
+    parser.add_argument('-F', '--full-tagname', action='store_true', help='display full tag name')
     parser.add_argument('-I', '--show-image', action='store_true', help='show image details')
     parser.add_argument('-R', '--root', help='restrict query to this root album')
+    parser.add_argument('-T', '--album-tags', nargs='?', const='.*', help='show and filter tags for displayed albums')
     args = parser.parse_args()
     conf = {
         'show_image': args.show_image,
         'sort_count': args.sort_count,
         'root': args.root,
+        'album_tags': args.album_tags,
+        'full_tagname': args.full_tagname,
     }
     dk = Digikuery(args.dbpath, conf)
     if args.interactive:
