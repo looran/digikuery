@@ -74,7 +74,7 @@ class Digikuery(object):
         if name == '.*':
             name = None
         for album, tags in sorted(self._query_albums(name).items()):
-            s += "{} ({})\n".format(album, len(tags))
+            s += "{} ({})\n".format(album[1:], len(tags))
             s += "    {}\n".format(' '.join([ "{} ({})".format(t, c) for t, c in sorted(tags.items(), key=lambda i: i[1], reverse=True) ]))
         return s
 
@@ -162,7 +162,7 @@ class Digikuery(object):
             tag_fullname = self._tag_fullname(res[1])
             if skiptag and (skiptag == res[1].name or skiptag == tag_fullname):
                 continue
-            if self.conf['album_tags'] != '.*' and not re.match(r".*%s.*" % self.conf['album_tags'], tag_fullname, re.IGNORECASE):
+            if type(names) is list and self.conf['album_tags'] != '.*' and not re.match(r".*%s.*" % self.conf['album_tags'], tag_fullname, re.IGNORECASE):
                 continue
             if self.conf['full_tagname']:
                 albums[res[0].relativePath][tag_fullname] = res[2]
