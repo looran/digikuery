@@ -49,7 +49,7 @@ class AlbumRoot(Base):
 
 class Tag(Base):
     DIGIKAM_INTERNAL_TAGS_ROOT = ['_Digikam_Internal_Tags_']
-    DIGIKAM_BLACKLIST_TAGS = [ "Color Label None", "Pick Label None", "Current Version", "Original Version", "Intermediate Version" ]
+    DIGIKAM_BLACKLIST_TAGS = [ "Color Label None", "Pick Label None", "Current Version", "Original Version", "Intermediate Version", "Scanned for Faces" ]
     __tablename__ = "Tags"
     id = Column(Integer, ForeignKey('Tags.pid'), primary_key=True)
     pid = Column(Integer, ForeignKey('Tags.id'))
