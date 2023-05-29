@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "digikuery"
+authors = [ {name = "Laurent Ghigonis", email = "ooookiwi@gmail.com"}, ]
+description = "Digikam database query tool"
+readme = "README.md"
+requires-python = ">=3.0"
+keywords = ["digikam", "database", "query"]
+license = {text = "BSD-3-Clause"}
+dependencies = [
+    "sqlalchemy",
+]
+dynamic = ["version"]
+
+[project.scripts]
+digikuery = "digikuery:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "digikuery.VERSION"}
+
+[project.urls]
+"Homepage" = "https://github.com/looran/digikuery"

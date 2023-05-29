@@ -38,6 +38,12 @@ List albums when tag 'Paquerette' is present, together with other tags of this a
 $ digikuery tag Paquerette
 ```
 
+## Install
+
+``` bash
+$ pip install digikuery
+```
+
 ## Example: Query which albums contain given tag expression
 
 Bellow we look for the "semaphore" name in all tags.
@@ -79,12 +85,6 @@ $ digikuery -T access tag semaphore
 		TagAccess/Car(6), TagAccess/Walking (3)
       album_albanie
 		TagAccess/Walking (5)
-```
-
-## Install
-
-``` bash
-$ sudo make install
 ```
 
 ## Internals

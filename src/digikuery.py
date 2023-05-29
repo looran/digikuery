@@ -17,9 +17,11 @@ $ digikuery tag Paquerette
 """
 
 import re
+import sys
 import argparse
 import pathlib
 from collections import defaultdict
+
 import sqlalchemy
 from sqlalchemy import Column, Table, DateTime, UnicodeText, Integer, String, Unicode, ForeignKey, MetaData
 from sqlalchemy.orm import relationship, declarative_base
@@ -222,7 +224,7 @@ class Digikuery(object):
         else:
             return tag.name
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="digikuery - "+DESCRIPTION+" - v"+VERSION, epilog=EXAMPLES, formatter_class=argparse.RawTextHelpFormatter)
     parser.add_argument('-d', '--dbpath', help='database path', default="sqlite:///{home}/Pictures/digikam4.db".format(home=str(pathlib.Path.home())))
     parser.add_argument('-F', '--full-tagname', action='store_true', help='display full tag name')
@@ -260,3 +262,6 @@ if __name__ == "__main__":
         print(dk.query_tag(args.tag_name, args.show_image, args.sort_count))
     else:
         print(dk.stats())
+
+if __name__ == "__main__":
+    sys.exit(main())
