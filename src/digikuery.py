@@ -36,9 +36,15 @@ imagetag = Table('ImageTags', Base.metadata,
 def help():
     print("""Interactive mode help:
    available objects
-      dk.engine
       dk.session
+         dk.session.query(Album).count()
+         dk.session.query(AlbumRoot).all()
+         dk.session.query(Image).filter(Image.name == 'example.png').all()
+         dk.session.query(Album, Tag, sqlalchemy.func.count(Tag.name)).join(imagetag).join(Image).join(Album)
+      dk.engine
+         access sqlalchemy engine
       dk.metadata
+         access sqlalchemy metadata
    available functions
       help()
          print this message

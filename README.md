@@ -87,6 +87,33 @@ $ digikuery -T access tag semaphore
 		TagAccess/Walking (5)
 ```
 
+## Interactive shell in database
+
+```
+$ digikuery shell
+Interactive mode help:
+   available objects
+      dk.session
+         dk.session.query(Album).count()
+         dk.session.query(AlbumRoot).all()
+         dk.session.query(Image).filter(Image.name == 'example.png').all()
+         dk.session.query(Album, Tag, sqlalchemy.func.count(Tag.name)).join(imagetag).join(Image).join(Album)
+      dk.engine
+         access sqlalchemy engine
+      dk.metadata
+         access sqlalchemy metadata
+   available functions
+      help()
+         print this message
+      dk.query_album(album)
+      dk.query_tag(tag)
+      dk.schema()
+      dk.stats()
+running ipython...
+
+In [1]:
+```
+
 ## Internals
 
 digikuery uses sqlalchemy to map digikam database to python objects.
