@@ -1,4 +1,4 @@
-digikuery is a script to perform queries in [digikam](https://www.digikam.org/) photo manager database.
+digikuery is a script to perform queries in [digikam](https://www.digikam.org/) (photo manager) database.
 
 It can
 * Query albums which contains tags matching a given regex
@@ -10,27 +10,32 @@ It can
 ## Usage
 
 ``` bash
-usage: digikuery [-h] [-a [ALBUM]] [-d DBPATH] [-i] [-s] [-t [TAG]] [-C] [-F]
-                 [-I] [-R ROOT] [-T [ALBUM_TAGS]]
+usage: digikuery.py [-h] [-d DBPATH] [-F] [-R ROOT] [-T [FILTER_TAGS]] {shell,schema,album,tag,stats} ...
 
-Digikam database query tool
+digikuery - Digikam database query tool - v20230529
 
-optional arguments:
+positional arguments:
+  {shell,schema,album,tag,stats}
+    shell                       spawn ipython shell to explor digikam database
+    schema                      dump digikam database schema
+    album               [album] list tags for one or all albums
+    tag                 [tag]   list all tags or query single tag
+                        -C      sort by result count
+                        -I      show image details
+    stats                       show digikam database statistics (default)
+
+options:
   -h, --help            show this help message and exit
-  -a [ALBUM], --album [ALBUM]
-                        query album tags
   -d DBPATH, --dbpath DBPATH
                         database path
-  -i, --interactive     interactive shell mode
-  -s, --schema          dump schema
-  -t [TAG], --tag [TAG]
-                        query tags
-  -C, --sort-count      sort by result count
   -F, --full-tagname    display full tag name
-  -I, --show-image      show image details
   -R ROOT, --root ROOT  restrict query to this root album
-  -T [ALBUM_TAGS], --album-tags [ALBUM_TAGS]
+  -T [FILTER_TAGS], --filter-tags [FILTER_TAGS]
                         show and filter tags for displayed albums
+
+examples:
+List albums when tag 'Paquerette' is present, together with other tags of this album
+$ digikuery tag Paquerette
 ```
 
 ## Example: Query which albums contain given tag expression
@@ -40,7 +45,7 @@ Bellow we look for the "semaphore" name in all tags.
 The query returns 2 tags "TagCommunication/Semaphore/Bleu" and "TagAlphabet/Semaphore", listing for each tag the albums containing tagged pictures.
 
 ``` bash
-$ digikuery -t semaphore
+$ digikuery tag semaphore
   3 TagCommunication/Semaphore/Bleu
       album_albanie
       album_france
@@ -54,7 +59,7 @@ Providing -I option would list the picture names.
 Let's just sort them by picture count:
 
 ```
-$ digikuery -t semaphore -C
+$ digikuery tag -C semaphore
   3 TagCommunication/Semaphore/Bleu
       3 album_france
       2 album_grece
@@ -66,7 +71,7 @@ $ digikuery -t semaphore -C
 For each matching album we can show if it contains other tags, for example tags maching "access"
 
 ``` bash
-$ digikuery -t semaphore -T access
+$ digikuery -T access tag semaphore
   3 TagCommunication/Semaphore/Bleu
       album_france
         TagAccess/Walking (9), TagAccess/Train(1)
